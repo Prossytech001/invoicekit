@@ -24,14 +24,14 @@ export default async function RenderPage({ params }: { params: Promise<{ token: 
     <>
       <style>{`
         @page { size: A4; margin: 14mm 0; }
-        html, body { background: #fff !important; margin: 0; padding: 0; }
-        body { min-height: 0 !important; }
-        .pdf-root { width: 210mm; margin: 0 auto; }
-        .pdf-root > div { min-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
-        .pdf-root [data-watermark] { position: fixed !important; }
-        .pdf-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        thead { display: table-header-group; }
-        tr { break-inside: avoid; }
+html, body { background: #fff !important; margin: 0; padding: 0; }
+body { min-height: 0 !important; }
+.pdf-root { width: 210mm; margin: 0 auto; }
+.pdf-root > div { min-height: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; }
+.pdf-root [data-watermark] { position: fixed !important; }
+.pdf-root * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+thead { display: table-header-group; }
+tr { break-inside: avoid; }
       `}</style>
       <div className="pdf-root">
         <def.Component data={data} totals={totals} accent={def.manifest.accent} />

@@ -1,7 +1,7 @@
 import { formatMoney } from "@/engine/calculate";
 import { fmtDate } from "@/lib/invoice-utils";
-import type { TemplateProps } from "../types";
 import SignatureBlock from "../SignatureBlock";
+import type { TemplateProps } from "../types";
 
 const SERIF = "Georgia, 'Times New Roman', serif";
 
@@ -24,10 +24,10 @@ export default function FormalFeeHeaderTemplate({ data, totals, accent }: Templa
 
   return (
     <div
-      className="relative text-[13px] leading-relaxed text-gray-800"
+      className="relative isolate text-[13px] leading-relaxed text-gray-800"
       style={{ minHeight: 1123, padding: "56px 56px 48px", fontFamily: "Arial, Helvetica, sans-serif" }}
     >
-              {/* Watermark (the user's logo, faded) */}
+      {/* Watermark (the user's logo, faded) */}
       {business.logo && extras.showWatermark !== false && (
         <div data-watermark className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -38,6 +38,7 @@ export default function FormalFeeHeaderTemplate({ data, totals, accent }: Templa
           />
         </div>
       )}
+
       {/* Header */}
       <div className="flex items-start justify-between gap-8">
         <div className="max-w-[330px]">
@@ -47,7 +48,7 @@ export default function FormalFeeHeaderTemplate({ data, totals, accent }: Templa
           <div className="mt-2 whitespace-pre-line text-[11px] text-gray-500">{business.address}</div>
           {contact && <div className="mt-1 text-[11px] text-gray-500">{contact}</div>}
         </div>
-                {business.logo && (
+        {business.logo && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={business.logo} alt="Logo" style={{ maxWidth: 130, maxHeight: 90, objectFit: "contain" }} />
         )}
@@ -142,7 +143,6 @@ export default function FormalFeeHeaderTemplate({ data, totals, accent }: Templa
       )}
 
       {/* Signature */}
-            {/* Signature */}
       {extras.showSignature ? <SignatureBlock extras={extras} variant="inline" /> : null}
 
       <div className="mt-6 flex justify-between text-[10px] text-gray-400">
