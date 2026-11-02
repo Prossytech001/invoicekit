@@ -11,7 +11,7 @@ const NAV: { href: string; label: string; icon: IconName }[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
   { href: "/templates", label: "Templates", icon: "grid" },
   { href: "/invoices", label: "My Invoices", icon: "file" },
-  { href: "/settings", label: "Settings", icon: "sliders" },
+  
 ];
 
 function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
