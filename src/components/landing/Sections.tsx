@@ -173,7 +173,7 @@ export function Features() {
 
 /* ---------- pricing ---------- */
 const plans = [
-  { name: "Free", note: "Everything you need to start", live: true, items: ["Selected invoice and email templates", "Up to 100 emails a month", "Unlimited PDF downloads", "Customers and document library"] },
+  { name: "500", note: "Everything you need to start", live: true, items: ["Access to selected invoice templates", "Create and customize invoices for free", "Add your business and customer details", "Manage customers and your document library"] },
   { name: "Pro", note: "For growing businesses", live: false, items: ["Premium templates", "Higher sending limits", "Custom branding", "Saved signatures and templates"] },
   { name: "Business", note: "For teams", live: false, items: ["Multiple business profiles", "Team collaboration", "Advanced reporting", "Priority support"] },
 ];
@@ -194,7 +194,7 @@ export function Pricing() {
                     <li key={it} className="flex gap-2.5"><span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${p.live ? "bg-lime" : "bg-accent"}`} />{it}</li>
                   ))}
                 </ul>
-                {p.live ? <Link href="/register" className="btn-primary mt-8">Start free</Link> : <span className="btn-ghost pointer-events-none mt-8 opacity-70">Coming soon</span>}
+                {p.live ? <Link href="/register" className="btn-primary mt-8">500</Link> : <span className="btn-ghost pointer-events-none mt-8 opacity-70">Coming soon</span>}
               </div>
             </Reveal>
           ))}
