@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { calculate, formatMoney } from "@/engine/calculate";
+import { calculate } from "@/engine/calculate";
 import { api } from "@/lib/api";
+import { BillingStatus } from "@/lib/billing";
+import { downloadInvoicePdf } from "@/lib/download";
 import { useDraft } from "@/store/invoiceStore";
 import { getTemplate, templates } from "@/templates/registry";
 import type { InvoiceDraft } from "@/templates/types";
@@ -25,9 +27,9 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
   const [mounted, setMounted] = useState(false);
   const [tab, setTab] = useState<"form" | "preview">("form");
   const [saving, setSaving] = useState(false);
-  const [paying, setPaying] = useState(false);
+  const [working, setWorking] = useState(false);
   const [savedJson, setSavedJson] = useState<string | null>(null);
-  const [price, setPrice] = useState<{ amountMinor: number; currency: string } | null>(null);
+  const [billing, setBilling] = useState<BillingStatus | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string; link?: boolean } | null>(null);
   const totals = useMemo(() => calculate(data), [data]);
 
@@ -49,7 +51,7 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
   }, [templateId, isNew, initial, router]);
 
   useEffect(() => {
-    api<{ amountMinor: number; currency: string }>("/payments/price").then(setPrice).catch(() => {});
+    api<BillingStatus>("/billing/status").then(setBilling).catch(() => {});
   }, []);
 
   if (!def) return null;
@@ -58,7 +60,7 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
   const Template = def.Component;
   const dirty = savedJson !== JSON.stringify(data);
   const status = !invoiceId ? "Not saved yet" : dirty ? "Unsaved changes" : "All changes saved";
-  const priceLabel = price ? formatMoney(price.amountMinor, price.currency, "en-NG") : "";
+  const subscribed = billing?.active === true;
 
   // Creates or updates the saved invoice and returns its id.
   async function persist(): Promise<string> {
@@ -88,30 +90,51 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
     }
   }
 
-  // Save, then send the user to Paystack. The PDF unlocks only after the payment is confirmed.
-  async function payAndDownload() {
+  function missingFields(): string[] {
     const missing: string[] = [];
     if (!data.business.name.trim()) missing.push("your business name");
     if (!data.customer.name.trim()) missing.push("the client name");
     if (!data.invoice.number.trim()) missing.push("the invoice number");
     if (totals.total <= 0) missing.push("at least one item with an amount");
+    return missing;
+  }
+
+  // Subscribers: lock the invoice as final, then download the PDF.
+  async function finalizeAndDownload() {
+    const missing = missingFields();
     if (missing.length) {
-      setMessage({ ok: false, text: `Before paying, please add ${missing.join(", ")}.` });
+      setMessage({ ok: false, text: `Before finalizing, please add ${missing.join(", ")}.` });
       return;
     }
-    setPaying(true);
+    setWorking(true);
     setMessage(null);
     try {
       const id = await persist();
-      const { authorizationUrl } = await api<{ authorizationUrl: string }>("/payments/checkout", {
-        method: "POST",
-        body: JSON.stringify({ invoiceId: id }),
-      });
-      window.location.href = authorizationUrl;
+      await api(`/invoices/${id}/finalize`, { method: "POST" });
+      const filename = `${data.invoice.number.trim() || "invoice"}.pdf`;
+      useDraft.getState().reset(); // the saved invoice is final now; the next one starts clean
+      try {
+        await downloadInvoicePdf(id, filename);
+      } catch {
+        /* the invoice page has a Download button if this fails */
+      }
+      router.push(`/invoices/${id}`);
     } catch (e) {
-      setMessage({ ok: false, text: e instanceof Error ? e.message : "Could not start the payment.", link: true });
-      setPaying(false);
+      setMessage({ ok: false, text: e instanceof Error ? e.message : "Could not finalize the invoice.", link: true });
+      setWorking(false);
     }
+  }
+
+  // Everyone else: keep the draft, then go to the plans page. They come back here afterwards.
+  async function goSubscribe() {
+    setWorking(true);
+    try {
+      await persist();
+    } catch {
+      /* the draft is still kept in this browser */
+    }
+    sessionStorage.setItem("billingReturn", window.location.pathname);
+    router.push("/billing");
   }
 
   function startOver() {
@@ -163,18 +186,18 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
           <button
             type="button"
             onClick={save}
-            disabled={saving || paying}
+            disabled={saving || working}
             className="rounded-full border border-emerald-900 px-5 py-2 text-sm font-semibold text-emerald-900 hover:bg-emerald-50 disabled:opacity-60"
           >
             {saving ? "Saving..." : "Save draft"}
           </button>
           <button
             type="button"
-            onClick={payAndDownload}
-            disabled={saving || paying}
+            onClick={subscribed ? finalizeAndDownload : goSubscribe}
+            disabled={saving || working || billing === null}
             className="rounded-full bg-emerald-900 px-5 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
           >
-            {paying ? "Redirecting..." : `Pay & Download${priceLabel ? ` · ${priceLabel}` : ""}`}
+            {working ? "Please wait..." : subscribed ? "Finalize & Download" : "Subscribe to download"}
           </button>
         </div>
       </div>
@@ -201,7 +224,7 @@ export default function InvoiceEditor({ templateId, isNew = false, initial }: Pr
         </div>
         <div className={tab === "preview" ? "block" : "hidden lg:block"}>
           <div className="lg:sticky lg:top-24">
-            <ScaledPage overlay="PREVIEW">
+            <ScaledPage overlay={subscribed ? undefined : "PREVIEW"}>
               <Template data={data} totals={totals} accent={def.manifest.accent} />
             </ScaledPage>
           </div>

@@ -1,10 +1,10 @@
 import { Suspense } from "react";
-import PaymentResult from "@/components/payments/PaymentResult";
+import BillingResult from "@/components/billing/BillingResult";
 
-export default function PaymentCallbackPage() {
+export default function BillingCallbackPage() {
   return (
     <Suspense fallback={<p className="mt-10 text-center text-sm text-gray-500">Confirming your payment...</p>}>
-      <PaymentResult />
+      <BillingResult />
     </Suspense>
   );
 }
